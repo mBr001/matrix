@@ -26,7 +26,7 @@ void healhtyMatrixDemo()
 {
     HealthyMatrix<int, 2> matrix;
 
-    for (int i = 0, j = 9; i < 10, j >= 0; ++i, --j) {
+    for (int i = 0, j = 9; i < 10; ++i, --j) {
         matrix.set(i, i, i);
         matrix.set(j, i, j);
     }
@@ -97,7 +97,7 @@ void stringMatrixDemo() {
     
     SmokerMatrix<std::string, 2> matrix("0");
 
-    for (int i = 0, j = 9; i < 10, j >= 0; ++i, --j) {
+    for (int i = 0, j = 9; i < 10; ++i, --j) {
         matrix[i][i] = itos(i).c_str();
         matrix[i][j] = itos(j);
     }
