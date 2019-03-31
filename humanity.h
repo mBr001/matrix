@@ -3,38 +3,20 @@
 
 #include <map>
 #include <array>
-#include <type_traits>
-#include <tuple>
-#include <utility>
 
-
-// Converts array into a tuple.
-template<typename T, typename Array, size_t... I>
-auto makeTupleImpl(const Array& a, std::index_sequence<I...>, T value)
-{
-    return std::make_tuple(a[I]..., value);
-}
-
-template<typename T, std::size_t N, typename Indices = std::make_index_sequence<N>>
-auto makeTuple(const std::array<int, N>& arr, T value)
-{
-    return makeTupleImpl(arr, Indices{}, value);
-}
+#include "lib.h"
 
 
 template<typename T, size_t DIM>
 class HealthyMatrix 
 {
-protected:
     using Position  = std::array<int, DIM>;
-
-private:
     using Container = std::map<Position, T>;
-    
+
     T defaultValue;
     Container container;
 
-protected:
+
     void set(const Position& pos, const T& elem) 
     {
         auto iter = container.find(pos);
@@ -60,7 +42,6 @@ protected:
         return defaultValue;
     }
     
-private:
     // #########################################################################
     class ConstIterator 
     {
@@ -119,6 +100,7 @@ public:
     HealthyMatrix& operator= (HealthyMatrix&&)      = default;
 
 
+    // TODO: ints?
     template<typename... Pos>
     void set(const T& elem, int x1, Pos... p) 
     {

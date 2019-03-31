@@ -66,6 +66,7 @@ void matrixAsserts()
     assert(matrix.size() == 0);
 }
 
+
 void oops()
 {
     SmokerMatrix<int, 2> matrix;
@@ -73,7 +74,7 @@ void oops()
 
     auto modify = [&matrix](int& n, int val) { 
         n = val; 
-        // assert(matrix.size() == 1); // size is 0 here.
+        assert(matrix.size() == 1);
     };
 
     modify(matrix[1][2], 28);
@@ -122,7 +123,6 @@ void stringMatrixDemo() {
         std::cout << x << y << v << std::endl;
     }
 }
-
 
 int main()
 {

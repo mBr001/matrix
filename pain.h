@@ -1,13 +1,36 @@
 #ifndef _PAIN_H_
 #define _PAIN_H_
 
-#include "humanity.h"
+#include <array>
+#include <map>
 
+#include "lib.h"
 
 template<typename T, size_t DIM>
-class SmokerMatrix : public HealthyMatrix<T, DIM>
+class SmokerMatrix
 {
-    using Position = typename HealthyMatrix<T, DIM>::Position;
+    using Position  = std::array<int, DIM>;
+    using Container = std::map<Position, T>;
+    
+    T defaultValue;
+    Container container;
+    std::map<Position, int> cellCounter;
+
+    void commit(const Position& pos)
+    {
+        auto elem = container.find(pos);
+        auto cnt = cellCounter.find(pos);
+
+        --cnt->second;
+
+        if (cnt->second == 0 && elem->second == defaultValue) {
+            container.erase(elem);
+        }
+
+        if (cnt->second == 0) {
+            cellCounter.erase(cnt);
+        }
+    }
 
     class Cell
     {
@@ -15,7 +38,7 @@ class SmokerMatrix : public HealthyMatrix<T, DIM>
 
         SmokerMatrix *owner;
         Position pos;
-        T elem;
+        T& elem;
 
         Cell()            = delete;
         Cell(const Cell&) = delete;
@@ -24,15 +47,8 @@ class SmokerMatrix : public HealthyMatrix<T, DIM>
             c.owner = nullptr;
         };
         
-        Cell(SmokerMatrix* owner, const Position& pos, const T& elem) 
+        Cell(SmokerMatrix* owner, const Position& pos, T& elem) 
             : owner(owner), pos(pos), elem(elem) {}
-
-        void commit() 
-        {
-            if (owner) {
-                owner->set(pos, elem);
-            }
-        }
 
     public:
         operator T&()             { return elem; }
@@ -56,13 +72,22 @@ class SmokerMatrix : public HealthyMatrix<T, DIM>
             return (elem = T(rhs), *this);
         }
 
-        ~Cell() { commit(); }
+        ~Cell() { 
+            if (owner) {
+                owner->commit(pos);
+            }
+        }
     };
 
 
     // #########################################################################
-    Cell at(const Position& pos) {
-        return Cell(this, pos, this->get(pos));
+    Cell getCell(const Position& pos) 
+    {
+        ++cellCounter[pos];
+        if (container.find(pos) == container.end()) {
+            container.emplace(pos, defaultValue);
+        }
+        return Cell(this, pos, container[pos]);
     }
 
     template<size_t N>
@@ -77,25 +102,120 @@ class SmokerMatrix : public HealthyMatrix<T, DIM>
     public:
         auto operator[] (int i) const {
             if constexpr (N != 1) {
-                auto a = pos;
-                a[DIM - N] = i;
-                return View<N-1>(matrix, a);
+                auto p = pos;
+                p[DIM - N] = i;
+                return View<N-1>(matrix, p);
             } 
             else {
                 auto a = pos;
                 a[DIM - 1] = i;
-                return Cell(matrix, a, matrix->at(a));
+                return matrix->getCell(a);
             }
         }
     };
 
 
+    // #########################################################################
+    class ConstIterator 
+    {
+        friend SmokerMatrix;
+
+        using IterType = typename Container::const_iterator;
+
+        SmokerMatrix *owner;
+        IterType mapIterator;
+
+        ConstIterator() = delete;
+        ConstIterator(SmokerMatrix *owner, IterType iter) 
+            : owner(owner), mapIterator(iter) {}
+
+    public:
+        ConstIterator(const ConstIterator&) = default;
+        ConstIterator(ConstIterator&&)      = default;
+
+        ConstIterator& operator= (const ConstIterator&) = default;
+        ConstIterator& operator= (ConstIterator&&)      = default;
+
+        bool operator!= (const ConstIterator& rhs) const noexcept {
+            return mapIterator != rhs.mapIterator;
+        }
+
+        bool operator== (const ConstIterator& rhs) const noexcept {
+            return mapIterator == rhs.mapIterator;
+        }
+
+        auto operator* () const noexcept {
+            return makeTuple(mapIterator->first, mapIterator->second);
+        }        
+
+        auto operator-> () const noexcept {
+            return &mapIterator->second;
+        }
+
+    private:
+        void inc() noexcept 
+        {
+            for (++mapIterator; 
+                mapIterator != owner->container.end(); ++mapIterator) 
+            {
+                if (mapIterator->second != owner->defaultValue) {
+                    return;
+                }
+            }
+        }
+
+    public:
+        ConstIterator& operator++ () noexcept {
+            return (inc(), *this);
+        }
+
+        ConstIterator operator++ (int) noexcept {
+            ConstIterator iter{mapIterator};
+            inc();
+            return iter;
+        }
+    };
+
+
 public:
-    SmokerMatrix()  = default;
-    SmokerMatrix(const T& defaultValue) : HealthyMatrix<T, DIM>(defaultValue) {}
+    SmokerMatrix()                      : defaultValue(T()) {}
+    SmokerMatrix(const T& defaultValue) : defaultValue(defaultValue) {}
 
     auto operator[] (int i) {
         return View<DIM>(this, Position{i})[i];
+    }
+
+    size_t size() const noexcept
+    {
+        size_t size = container.size();
+        for (auto posCnt : cellCounter) {
+            if (container.at(posCnt.first) == defaultValue) {
+                --size;
+            }
+        }
+        return size;
+    }
+
+    using const_iterator = ConstIterator;
+
+    const_iterator begin() const noexcept { 
+        return ConstIterator(
+            const_cast<SmokerMatrix*>(this), container.cbegin()); 
+    }
+    
+    const_iterator end() const noexcept { 
+        return ConstIterator(
+            const_cast<SmokerMatrix*>(this), container.cend());   
+    }
+
+    const_iterator cbegin() const noexcept {
+        return ConstIterator(
+            const_cast<SmokerMatrix*>(this), container.cbegin());
+    }
+
+    const_iterator cend() const noexcept {
+        return ConstIterator(
+            const_cast<SmokerMatrix*>(this), container.cend());
     }
 };
 
