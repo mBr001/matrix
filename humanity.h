@@ -64,7 +64,6 @@ private:
     // #########################################################################
     class ConstIterator 
     {
-        // TODO: iterator traits.
         using IterType = typename Container::const_iterator;
         
         friend HealthyMatrix;
