@@ -72,6 +72,9 @@ void oops()
     SmokerMatrix<int, 2> matrix;
     assert(matrix.size() == 0);
 
+    // "Oops-problem" -- the Cell is still alive here, 
+    // so it has not notified yet. However, the matrix 
+    // is in the correct state.
     auto modify = [&matrix](int& n, int val) { 
         n = val; 
         assert(matrix.size() == 1);
@@ -81,7 +84,12 @@ void oops()
     assert(matrix[1][2] == 28);
     assert(matrix.size() == 1);
 
-    matrix[1][2] = 0;
+    auto remove = [&matrix](int& n, int val) {
+        n = val;
+        assert(matrix.size() == 0);
+    };
+
+    remove(matrix[1][2], 0);
     assert(matrix[1][2] == 0);
     assert(matrix.size() == 0);
 }

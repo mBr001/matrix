@@ -1,3 +1,8 @@
+// This is the "support-friendly" version of matrix. 
+// We should control container content. So we have to perform all operations
+// with elements with container methods. We provide only a const iterator in
+// order to avoid any modifications of elements without any notification.
+
 #ifndef _HUMANITY_H_
 #define _HUMANITY_H_
 
