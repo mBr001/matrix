@@ -1,6 +1,14 @@
 dist: xenial
 language: cpp
 
+before_script:
+    # Rewrite /etc/apt/soures.list
+  - sudo echo "deb http://archive.ubuntu.com/ubuntu/ bionic main" > /etc/apt/sources.list
+  - sudo echo "deb http://archive.ubuntu.com/ubuntu/ bionic-updates main" >> /etc/apt/sources.list
+  
+  - sudo apt update
+  - sudo apt-get install g++ cmake -y
+
 script:
   - cmake .
   - cmake --build .
